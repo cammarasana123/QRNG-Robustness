@@ -60,6 +60,7 @@
       padding: 18px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.25);
       backdrop-filter: blur(8px);
+      overflow: visible;
     }
 
     .controls h2, .results h2 {
@@ -110,6 +111,7 @@
       position: absolute;
       left: calc(100% + 10px);
       top: 50%;
+      z-index: 9999;
       transform: translateY(-50%);
       width: 230px;
       background: #0c1329;
@@ -122,7 +124,6 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 140ms ease;
-      z-index: 9999;
       box-shadow: 0 10px 24px rgba(0,0,0,0.3);
     }
 
