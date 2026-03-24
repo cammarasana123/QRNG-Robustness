@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quantum Randomness Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121936;
+      --panel-2: #182147;
+      --text: #eaf0ff;
+      --muted: #a8b4d9;
+      --accent: #77a7ff;
+      --good: #31c48d;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #09101f 0%, #0e1530 100%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 2rem;
+      line-height: 1.1;
+    }
+    .subtitle {
+      color: var(--muted);
+      max-width: 900px;
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+    .panel {
+      background: rgba(18, 25, 54, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+    }
+    .controls h2, .results h2 {
+      margin-top: 0;
+      font-size: 1.05rem;
+    }
+    .control { margin-bottom: 16px; }
+    label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    input[type="range"], input[type="number"], select, textarea {
+      width: 100%;
+    }
+    input[type="range"] { accent-color: var(--accent); }
+    input[type="number"], select, textarea {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+    }
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: #061226;
+    }
+    button.secondary {
+      background: #24315f;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .k {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-bottom: 6px;
+    }
+    .v {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .small {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+    .good { background: rgba(49,196,141,0.16); color: #89f0c8; }
+    .warn { background: rgba(245,158,11,0.16); color: #ffd58a; }
+    .bad { background: rgba(239,68,68,0.16); color: #ffb0b0; }
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .chartbox {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 12px;
+      min-height: 300px;
+    }
+    .legend-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+    .livebar {
+      height: 16px;
+      border-radius: 999px;
+      background: #25325f;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .livefill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--bad), var(--warn), var(--good));
+      transition: width 220ms ease;
+    }
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .cards, .charts { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 720px) {
+      .cards, .charts, .row2 { grid-template-columns: 1fr; }
+      .wrap { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Quantum Randomness Demo</h1>
+    <div class="subtitle">
+      An interactive browser demo inspired by your simulation study: generate a bit sequence, vary readout and gate noise, apply a simple privacy-amplification step, and watch real-time randomness indicators update. It is educational rather than cryptographically certified, but it mirrors the logic of the report in a GitHub Pages-friendly way.
+    </div>
+
+    <div class="grid">
+      <div class="panel controls">
+        <h2>Controls</h2>
+
+        <div class="control">
+          <label><span>Sequence length (raw shots)</span><strong id="lenLabel">4096</strong></label>
+          <input id="seqLen" type="range" min="256" max="20000" step="256" value="4096" />
+        </div>
+
+        <div class="control">
+          <label><span>Readout noise</span><strong id="readoutLabel">5.0%</strong></label>
+          <input id="readoutNoise" type="range" min="0" max="50" step="0.5" value="5" />
+        </div>
+
+        <div class="control">
+          <label><span>Gate noise</span><strong id="gateLabel">0.5%</strong></label>
+          <input id="gateNoise" type="range" min="0" max="5" step="0.1" value="0.5" />
+        </div>
+
+        <div class="control">
+          <label><span>Qubits used in parity-like extraction</span><strong id="qubitsLabel">8</strong></label>
+          <input id="nQubits" type="range" min="4" max="16" step="1" value="8" />
+        </div>
+
+        <div class="control">
+          <label><span>Discard rule before amplification</span></label>
+          <select id="discardRule">
+            <option value="0">Discard hw ≤ 0</option>
+            <option value="1">Discard hw ≤ 1</option>
+            <option value="2">Discard hw ≤ 2</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label><span>Generation mode</span></label>
+          <select id="mode">
+            <option value="single">Single sequence</option>
+            <option value="stream">Live stream</option>
+          </select>
+        </div>
+
+        <div class="btns">
+          <button id="generateBtn">Generate</button>
+          <button id="streamBtn" class="secondary">Start stream</button>
+          <button id="stopBtn" class="secondary">Stop</button>
+          <button id="presetBtn" class="secondary">Load hardware-like presets</button>
+        </div>
+
+        <div class="control" style="margin-top:16px;">
+          <label><span>Preset</span></label>
+          <select id="presetSelect">
+            <option value="custom">Custom</option>
+            <option value="quantinuum">Quantinuum-like</option>
+            <option value="ibm">IBM-like</option>
+            <option value="google">Google-like</option>
+            <option value="extreme">Extreme stress test</option>
+          </select>
+        </div>
+
+        <div class="footer">
+          <strong>Interpretation.</strong> The demo uses a synthetic “quantum-content” score that decreases with noise, plus practical sequence diagnostics: balance, runs, lag-1 correlation, byte entropy, and a visual randomness meter. It is meant for presentation and outreach on GitHub Pages.
+        </div>
+      </div>
+
+      <div class="panel results">
+        <h2>Results</h2>
+        <div class="cards">
+          <div class="card">
+            <div class="k">Randomness meter</div>
+            <div class="v" id="randScore">0.00</div>
+            <div class="livebar"><div id="randFill" class="livefill"></div></div>
+          </div>
+          <div class="card">
+            <div class="k">Quantum-content proxy</div>
+            <div class="v" id="xebScore">0.00</div>
+            <div id="xebStatus" class="status warn">waiting</div>
+          </div>
+          <div class="card">
+            <div class="k">Bias |p(1)-0.5|</div>
+            <div class="v" id="biasScore">0.000</div>
+            <div class="small" id="onesRate">ones rate: 0.500</div>
+          </div>
+          <div class="card">
+            <div class="k">Effective output bits</div>
+            <div class="v" id="effBits">0</div>
+            <div class="small" id="effRate">efficiency: 0%</div>
+          </div>
+        </div>
+
+        <div class="cards">
+          <div class="card">
+            <div class="k">Runs z-score</div>
+            <div class="v" id="runsZ">0.00</div>
+          </div>
+          <div class="card">
+            <div class="k">Lag-1 correlation</div>
+            <div class="v" id="lag1">0.000</div>
+          </div>
+          <div class="card">
+            <div class="k">Byte entropy</div>
+            <div class="v" id="entropy">0.00</div>
+          </div>
+          <div class="card">
+            <div class="k">Raw TV distance proxy</div>
+            <div class="v" id="tvDist">0.000</div>
+          </div>
+        </div>
+
+        <div class="charts">
+          <div class="chartbox">
+            <canvas id="bitsChart"></canvas>
+            <div class="legend-note">First 256 amplified bits shown as a 0/1 trace.</div>
+          </div>
+          <div class="chartbox">
+            <canvas id="histChart"></canvas>
+            <div class="legend-note">Hamming-weight distribution of raw shots versus ideal binomial profile.</div>
+          </div>
+          <div class="chartbox">
+            <canvas id="corrChart"></canvas>
+            <div class="legend-note">Autocorrelation at lags 1..20 on the amplified output.</div>
+          </div>
+          <div class="chartbox">
+            <label for="sequenceBox" class="k" style="display:block;margin-bottom:8px;">Amplified sequence preview</label>
+            <textarea id="sequenceBox" readonly></textarea>
+            <div class="legend-note">You can copy this bitstring for demos or screenshots.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const seqLen = $('seqLen');
+    const readoutNoise = $('readoutNoise');
+    const gateNoise = $('gateNoise');
+    const nQubits = $('nQubits');
+    const discardRule = $('discardRule');
+    const presetSelect = $('presetSelect');
+    const mode = $('mode');
+    const generateBtn = $('generateBtn');
+    const streamBtn = $('streamBtn');
+    const stopBtn = $('stopBtn');
+    const presetBtn = $('presetBtn');
+
+    let streamHandle = null;
+
+    function updateLabels() {
+      $('lenLabel').textContent = Number(seqLen.value).toLocaleString();
+      $('readoutLabel').textContent = Number(readoutNoise.value).toFixed(1) + '%';
+      $('gateLabel').textContent = Number(gateNoise.value).toFixed(1) + '%';
+      $('qubitsLabel').textContent = nQubits.value;
+    }
+
+    [seqLen, readoutNoise, gateNoise, nQubits].forEach(el => el.addEventListener('input', updateLabels));
+    updateLabels();
+
+    function mulberry32(a) {
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      }
+    }
+
+    function idealBinomialProbs(n) {
+      const probs = [];
+      const choose = (N, K) => {
+        let res = 1;
+        for (let i = 1; i <= K; i++) res = res * (N - K + i) / i;
+        return res;
+      };
+      for (let k = 0; k <= n; k++) probs.push(choose(n, k) / Math.pow(2, n));
+      return probs;
+    }
+
+    function simulateSequence({ shots, pReadout, pGate, nQ, discard }) {
+      const rng = mulberry32((shots * 31 + Math.round(pReadout*1000) * 17 + Math.round(pGate*1000) * 13 + nQ * 97 + discard * 7 + Date.now()) >>> 0);
+      const rawWeights = Array(nQ + 1).fill(0);
+      const amplified = [];
+
+      const xebNorm = Math.max(0, Math.min(1.05,
+        Math.exp(-3.8 * pGate) * Math.exp(-3.9 * pReadout)
+      ));
+
+      for (let s = 0; s < shots; s++) {
+        const shot = [];
+        for (let q = 0; q < nQ; q++) {
+          let bit = rng() < 0.5 ? 0 : 1;
+
+          if (rng() < pGate) {
+            bit = rng() < 0.5 ? 0 : 1;
+          }
+
+          const asym = 1.15;
+          const p01 = pReadout / (1 + asym);
+          const p10 = asym * p01;
+          if (bit === 0 && rng() < p01) bit = 1;
+          else if (bit === 1 && rng() < p10) bit = 0;
+
+          shot.push(bit);
+        }
+
+        const hw = shot.reduce((a, b) => a + b, 0);
+        rawWeights[hw]++;
+        if (hw <= discard) continue;
+
+        let parity = 0;
+        for (let q = 0; q < nQ; q++) {
+          const key = rng() < 0.5 ? 0 : 1;
+          parity ^= (shot[q] & key);
+        }
+        amplified.push(parity);
+      }
+
+      return { amplified, rawWeights, xebNorm };
+    }
+
+    function mean(arr) { return arr.reduce((a,b)=>a+b,0) / (arr.length || 1); }
+    function variance(arr) {
+      const m = mean(arr);
+      return mean(arr.map(v => (v - m) ** 2));
+    }
+    function entropyByte(bits) {
+      const nBytes = Math.floor(bits.length / 8);
+      if (nBytes === 0) return 0;
+      const counts = new Map();
+      for (let i = 0; i < nBytes; i++) {
+        let v = 0;
+        for (let j = 0; j < 8; j++) v = (v << 1) | bits[i*8+j];
+        counts.set(v, (counts.get(v) || 0) + 1);
+      }
+      let h = 0;
+      counts.forEach(c => {
+        const p = c / nBytes;
+        h -= p * Math.log2(p);
+      });
+      return h;
+    }
+
+    function lagCorrelation(bits, lag) {
+      if (bits.length <= lag + 1) return 0;
+      const m = mean(bits);
+      const v = variance(bits);
+      if (v === 0) return 0;
+      let acc = 0;
+      const n = bits.length - lag;
+      for (let i = 0; i < n; i++) acc += (bits[i] - m) * (bits[i + lag] - m);
+      return (acc / n) / v;
+    }
+
+    function runsZScore(bits) {
+      const n = bits.length;
+      if (n < 2) return 0;
+      const pi = mean(bits);
+      if (Math.abs(pi - 0.5) >= 2 / Math.sqrt(n)) return 6;
+      let runs = 1;
+      for (let i = 1; i < n; i++) if (bits[i] !== bits[i-1]) runs++;
+      const exp = 2 * n * pi * (1 - pi);
+      const denom = 2 * Math.sqrt(2 * n) * pi * (1 - pi);
+      return denom > 0 ? Math.abs(runs - exp) / denom : 0;
+    }
+
+    function tvDistance(rawWeights, nQ) {
+      const total = rawWeights.reduce((a,b)=>a+b,0) || 1;
+      const probs = rawWeights.map(v => v / total);
+      const ideal = idealBinomialProbs(nQ);
+      let tv = 0;
+      for (let i = 0; i < probs.length; i++) tv += Math.abs(probs[i] - ideal[i]);
+      return 0.5 * tv;
+    }
+
+    function randomnessScore(metrics) {
+      const biasTerm = Math.max(0, 1 - metrics.bias / 0.08);
+      const corrTerm = Math.max(0, 1 - Math.abs(metrics.lag1) / 0.15);
+      const runsTerm = Math.max(0, 1 - metrics.runsZ / 4);
+      const entTerm = Math.min(1, metrics.entropy / 8);
+      const xebTerm = Math.max(0, Math.min(1, metrics.xebNorm));
+      return 100 * (0.30 * biasTerm + 0.18 * corrTerm + 0.18 * runsTerm + 0.20 * entTerm + 0.14 * xebTerm);
+    }
+
+    function statusFromXeb(x) {
+      if (x >= 0.75) return ['high quantum structure', 'good'];
+      if (x >= 0.35) return ['moderate quantum structure', 'warn'];
+      return ['low but nonzero quantum structure', 'bad'];
+    }
+
+    const bitsChart = new Chart($('bitsChart'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'bit', data: [], pointRadius: 0, tension: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: -0.05, max: 1.05 } } }
+    });
+
+    const histChart = new Chart($('histChart'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'observed', data: [] },
+          { label: 'ideal binomial', data: [], type: 'line', pointRadius: 3, tension: 0.15 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const corrChart = new Chart($('corrChart'), {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'lag correlation', data: [] }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: -0.2, max: 0.2 } } }
+    });
+
+    function render(sim) {
+      const bits = sim.amplified;
+      const ones = mean(bits);
+      const bias = Math.abs(ones - 0.5);
+      const lag1 = lagCorrelation(bits, 1);
+      const ent = entropyByte(bits);
+      const tv = tvDistance(sim.rawWeights, Number(nQubits.value));
+      const runsZ = runsZScore(bits);
+      const score = randomnessScore({ bias, lag1, entropy: ent, runsZ, xebNorm: sim.xebNorm });
+
+      $('randScore').textContent = score.toFixed(1);
+      $('randFill').style.width = Math.max(0, Math.min(100, score)).toFixed(1) + '%';
+      $('xebScore').textContent = sim.xebNorm.toFixed(3);
+      const [statusText, statusCls] = statusFromXeb(sim.xebNorm);
+      $('xebStatus').textContent = statusText;
+      $('xebStatus').className = 'status ' + statusCls;
+      $('biasScore').textContent = bias.toFixed(4);
+      $('onesRate').textContent = `ones rate: ${ones.toFixed(4)}`;
+      $('effBits').textContent = bits.length.toLocaleString();
+      $('effRate').textContent = `efficiency: ${(100 * bits.length / Number(seqLen.value)).toFixed(1)}%`;
+      $('runsZ').textContent = runsZ.toFixed(2);
+      $('lag1').textContent = lag1.toFixed(4);
+      $('entropy').textContent = ent.toFixed(3);
+      $('tvDist').textContent = tv.toFixed(4);
+      $('sequenceBox').value = bits.slice(0, 2048).join('');
+
+      const preview = bits.slice(0, 256);
+      bitsChart.data.labels = preview.map((_, i) => i + 1);
+      bitsChart.data.datasets[0].data = preview;
+      bitsChart.update();
+
+      const totalRaw = sim.rawWeights.reduce((a,b)=>a+b,0) || 1;
+      const nQ = Number(nQubits.value);
+      histChart.data.labels = Array.from({ length: nQ + 1 }, (_, i) => i);
+      histChart.data.datasets[0].data = sim.rawWeights.map(v => v / totalRaw);
+      histChart.data.datasets[1].data = idealBinomialProbs(nQ);
+      histChart.update();
+
+      const lags = Array.from({ length: 20 }, (_, i) => i + 1);
+      corrChart.data.labels = lags;
+      corrChart.data.datasets[0].data = lags.map(l => lagCorrelation(bits, l));
+      corrChart.update();
+    }
+
+    function generateOnce() {
+      const sim = simulateSequence({
+        shots: Number(seqLen.value),
+        pReadout: Number(readoutNoise.value) / 100,
+        pGate: Number(gateNoise.value) / 100,
+        nQ: Number(nQubits.value),
+        discard: Number(discardRule.value)
+      });
+      render(sim);
+    }
+
+    function applyPreset(name) {
+      if (name === 'quantinuum') { readoutNoise.value = 0.5; gateNoise.value = 0.1; }
+      else if (name === 'ibm') { readoutNoise.value = 1.5; gateNoise.value = 0.5; }
+      else if (name === 'google') { readoutNoise.value = 3.0; gateNoise.value = 1.0; }
+      else if (name === 'extreme') { readoutNoise.value = 10.0; gateNoise.value = 2.0; }
+      updateLabels();
+      generateOnce();
+    }
+
+    generateBtn.addEventListener('click', generateOnce);
+    presetBtn.addEventListener('click', () => applyPreset(presetSelect.value));
+    presetSelect.addEventListener('change', () => {
+      if (presetSelect.value !== 'custom') applyPreset(presetSelect.value);
+    });
+
+    streamBtn.addEventListener('click', () => {
+      if (streamHandle) return;
+      mode.value = 'stream';
+      generateOnce();
+      streamHandle = setInterval(generateOnce, 700);
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (streamHandle) clearInterval(streamHandle);
+      streamHandle = null;
+    });
+
+    mode.addEventListener('change', () => {
+      if (mode.value === 'single') {
+        if (streamHandle) clearInterval(streamHandle);
+        streamHandle = null;
+      }
+    });
+
+    generateOnce();
+  </script>
+</body>
+</html>
