@@ -56,7 +56,6 @@
 
     .panel {
       position: relative;
-      isolation: isolate;
       background: rgba(18, 25, 54, 0.92);
       border: 1px solid var(--border);
       border-radius: 20px;
@@ -65,11 +64,6 @@
       overflow: visible;
     }
         
-    .panel > * {
-      position: relative;
-      z-index: 1;
-    }
-
     .controls h2, .results h2 {
       margin-top: 0;
       font-size: 1.05rem;
